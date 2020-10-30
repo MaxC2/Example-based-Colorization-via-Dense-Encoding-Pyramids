@@ -1,5 +1,6 @@
 import numpy as np
 import os,re,random
+import skimage
 import skimage.color as color
 import matplotlib.pyplot as plt
 import scipy.ndimage.interpolation as sni
@@ -7,6 +8,16 @@ import caffe
 import argparse
 from PIL import Image
 import scipy.misc
+
+def load_image_corrected(filename, color=True):
+    img = skimage.img_as_float(skimage.io.imread(filename, as_gray=not color)).astype(np.float32)
+    if img.ndim == 2:
+        img = img[:, :, np.newaxis]
+        if color:
+            img = np.tile(img, (1, 1, 3))
+    elif img.shape[2] == 4:
+        img = img[:, :, :3]
+    return img
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Example-based Colorization via Dense Encoding pyramids')
@@ -88,8 +99,8 @@ pts = np.load('./resources/pts_in_hull.npy')
 temp_small=None
 init_level=64
 
-img_rgb = caffe.io.load_image(gray)
-ref_rgb = caffe.io.load_image(refer)
+img_rgb = load_image_corrected(gray)
+ref_rgb = load_image_corrected(refer)
 
 (H_orig,W_orig) = img_rgb.shape[:2]
 
@@ -108,4 +119,3 @@ level=init_level
 while(level<=Tsize):
     generate(level)
     level=level*2
-
